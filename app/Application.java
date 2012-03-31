@@ -109,7 +109,7 @@ public class Application {
         
         // show preview
         Console.message("Previewing assignment...");
-        System.out.println(assignment.toPreviewString());
+        System.out.println(assignment.toString());
         System.out.println();
         
         // run each attachment

@@ -2,8 +2,19 @@ package grading;
 
 import app.Configuration;
 import app.Console;
+import java.io.File;
+import java.io.FileInputStream;
+import java.io.FileOutputStream;
+import java.io.IOException;
+import java.io.ObjectInputStream;
+import java.io.ObjectOutputStream;
+import java.io.Serializable;
+import java.nio.file.DirectoryIteratorException;
+import java.nio.file.DirectoryStream;
+import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
+import java.util.ArrayList;
 import java.util.Date;
 import java.util.Formatter;
 
@@ -11,16 +22,50 @@ import java.util.Formatter;
  *
  * @author andrew
  */
-public class Homework implements Comparable {
+public class Homework implements Comparable, Serializable {
 
+    private static final long serialVersionUID = -5294572414935844547L;
     public String name;
     public String title;
-    public String message;
     public Date submitted;
+    public String message;
+    public Path directory;
+    public Path[] files;
     public Attachment[] attachments;
     public String[] style_mistakes;
     public String assessment;
     public Rubric rubric;
+
+    /**
+     * Constructor
+     */
+    public Homework() {
+    }
+
+    /**
+     * Constructor; uses path string to find file attachments and serialized
+     * homework data in a directory; used by CLI to instantiate homework
+     * @param path 
+     */
+    public Homework(String homeworkDirectory) {
+        // setup
+        Path _homeworkDirectory = Paths.get(homeworkDirectory);
+        assert _homeworkDirectory.toFile().exists() : "Error: could not find homework directory " + homeworkDirectory;
+        Path serializedDataFile = _homeworkDirectory.resolve("homework-data.ser");
+        assert _homeworkDirectory.toFile().exists() : "Error: could not find serialized file homework-data.ser";
+        // unserialize
+        try {
+            Homework copy = Homework.load(serializedDataFile.toFile());
+            // load this
+            this.name = copy.name;
+            this.title = copy.title;
+            this.submitted = copy.submitted;
+            this.message = copy.message;
+            this.directory = copy.directory;
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+    }
 
     /**
      * Constructor
@@ -30,53 +75,94 @@ public class Homework implements Comparable {
      * @param submitted
      * @param files 
      */
-    public Homework(String name, String title, String message, Date submitted, Attachment[] files) {
+    public Homework(String name, String title, String message, Date submitted) {
         this.name = name;
         this.title = title;
         this.message = message;
         this.submitted = submitted;
-        this.attachments = files;
     }
-    
+
+    /**
+     * Saves the homework data to file
+     * @param file
+     * @param net
+     * @throws java.io.IOException
+     * @throws java.io.FileNotFoundException 
+     */
+    public static void save(File file, Homework homework) throws java.io.IOException, java.io.FileNotFoundException {
+        ObjectOutputStream out = new ObjectOutputStream(new FileOutputStream(file));
+        out.writeObject(homework);
+        out.flush();
+        out.close();
+    }
+
+    /**
+     * Loads the homework data from file
+     * @param file
+     * @throws java.io.IOException
+     * @throws java.io.FileNotFoundException
+     * @throws ClassNotFoundException 
+     */
+    public static Homework load(File file) throws java.io.IOException, java.io.FileNotFoundException, ClassNotFoundException {
+        ObjectInputStream in = new ObjectInputStream(new FileInputStream(file));
+        Homework out = (Homework) in.readObject();
+        out.directory = file.toPath().getParent();
+        return out;
+    }
+
     /**
      * Grades this assignment
      */
-    public void grade(){
+    public void grade() {
         Rubric config = (Rubric) Configuration.get("rubric");
-        try{
+        try {
             this.rubric = config.clone();
             this.rubric.grade();
-        }
-        catch(CloneNotSupportedException e){
+        } catch (CloneNotSupportedException e) {
             Console.error(e);
             return;
-        }       
+        }
     }
 
     /**
      * Returns the directory in which to save the homework files
      * @return 
      */
-    public Path getDirectory(){
-        String saveDirectory = (String) Configuration.get("savedirectory");
-        return Paths.get("homework", saveDirectory, this.getCondensedName());
+    public Path getDirectory() {
+        return this.directory;
     }
-    
+
+    /**
+     * Returns the files in the homework directory
+     * @return 
+     */
+    public Path[] getFiles() {
+        ArrayList<Path> files = new ArrayList<Path>();
+        try (DirectoryStream<Path> stream = Files.newDirectoryStream(this.getDirectory())) {
+            for (Path file : stream) {
+                if (file.toFile().isDirectory()) {
+                    // do nothing
+                } else {
+                    files.add(file);
+                }
+            }
+            // return
+            return files.toArray(new Path[0]);
+        } catch (DirectoryIteratorException | IOException ex) {
+            ex.printStackTrace();
+        }
+        // return
+        assert false : "Error: should not reach this.";
+        return null;
+    }
+
     /**
      * Returns the path to the saved e-mail file
      * @return 
      */
-    public Path getEmail(){
+    public Path getEmail() {
         return this.getDirectory().resolve("email.txt");
     }
-//    
-//    public Attachment[] getAttachments() {
-//        return attachments;
-//    }
-//
-//    public void setAttachments(Attachment[] files) {
-//        this.attachments = files;
-//    }
 
     public void saveAttachments() throws Exception {
         // get and create directories
@@ -84,75 +170,35 @@ public class Homework implements Comparable {
         // save attachments
         for (Attachment a : this.attachments) {
             a.save(this.getDirectory());
-            Console.message("Saved "+a.getLocalFile().getAbsolutePath());
+            Console.message("Saved " + a.getLocalFile().getAbsolutePath());
         }
     }
 
-//    public String getMessage() {
-//        return message;
-//    }
-//
-//    public void setMessage(String message) {
-//        this.message = message;
-//    }
-
-    public String getFirstName(){
+    public String getFirstName() {
         int first_space = this.name.indexOf(" ");
-        if( first_space == -1 ) return "Unknown";
+        if (first_space == -1) {
+            return "Unknown";
+        }
         return this.name.substring(0, first_space);
     }
-    
+
     public String getCondensedName() {
         return this.name.replaceAll("<.+>", "").replace(" ", "");
     }
-    
-    
-//    public String getName(){
-//        return this.name;
-//    }
-//
-//    public void setName(String name) {
-//        this.name = name;
-//    }
-//
-//    public Date getSubmitted() {
-//        return submitted;
-//    }
-//
-//    public void setSubmitted(Date submitted) {
-//        this.submitted = submitted;
-//    }
-//
-//    public String getTitle() {
-//        return title;
-//    }
-//
-//    public void setTitle(String title) {
-//        this.title = title;
-//    }
-//    
-//    public String[] getStyleMistakes() {
-//        return style_mistakes;
-//    }
-//
-//    public void setStyleMistakes(String[] style_mistakes) {
-//        this.style_mistakes = style_mistakes;
-//    }
 
     /**
      * Returns short string representation of the class
      * @return 
      */
-    public String toString() {
-        Formatter f = new Formatter();
-        return f.format("'%s' by %s on %s", this.title, this.getCondensedName(), this.submitted).toString();
-    }
-
+//    public String toString() {
+//        Formatter f = new Formatter();
+//        return f.format("'%s' by %s on %s", this.title, this.getCondensedName(), this.submitted).toString();
+//    }
     /**
      * Returns a full description of the assignment
      * @return 
      */
-    public String toPreviewString() {
+    public String toString() {
         StringBuilder s = new StringBuilder();
         s.append("Author: ");
         s.append(this.getCondensedName());
@@ -167,10 +213,18 @@ public class Homework implements Comparable {
         s.append(this.message);
         s.append("\n");
         s.append("Files: ");
-        for(int i = 0; i < this.attachments.length; i++){
-            s.append( this.attachments[i] );
-            if( i < this.attachments.length - 1 ) s.append(", ");
+        Path[] files = this.getFiles();
+        if (files.length > 0) {
+            s.append(files[0].getFileName());
+            if (files.length > 1) {
+                s.append(", ");
+                for (int i = 1; i < files.length; i++) {
+                    s.append(files[i].getFileName());
+                    s.append(", "); 
+                }
+            }
         }
+        // return
         return s.toString();
     }
 

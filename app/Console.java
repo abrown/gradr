@@ -1,9 +1,6 @@
 package app;
 
-import java.util.ArrayList;
-import java.util.Date;
 import java.util.HashMap;
-import java.util.List;
 import java.util.Scanner;
 
 /**
@@ -46,57 +43,7 @@ public class Console {
         if( choice == 0 ) return null;
         else return items[choice - 1];
     }
-    
-    /**
-     * Displays a choice menu for a group of strings, returning the choice entered
-     * @param items
-     * @return 
-     */
-//    public static int menu(String[] items) {
-//        // print list
-//        System.out.println("Menu:");
-//        System.out.println(" [0] Cancel");
-//        for (int i = 0; i < items.length; i++) {
-//            int index = i + 1;
-//            System.out.println(" [" + index + "] " + items[i].toString());
-//        }
-//        // get choice
-//        int choice = 0;
-//        do {
-//            System.out.print("Enter a number: ");
-//            Scanner sc = new Scanner(System.in);
-//            choice = sc.nextInt();
-//        } while (choice < 0 || choice > items.length);
-//        // return
-//        System.out.println();
-//        return choice - 1;
-//    }
-    
-    /**
-     * Displays a choice menu for an arraylist of objects, returning the choice entered
-     * @param items
-     * @return 
-     */
-//    public static int menu(List items) {
-//        // print list
-//        System.out.println("Menu:");
-//        System.out.println(" [0] Cancel");
-//        for (Object item : items) {
-//            int index = items.indexOf(item);
-//            System.out.println(" [" + index + "] " + item.toString());
-//        }
-//        // get choice
-//        int choice = 0;
-//        do {
-//            System.out.print("Enter a number: ");
-//            Scanner sc = new Scanner(System.in);
-//            choice = sc.nextInt();
-//        } while (choice < 0 || choice > items.size());
-//        // return
-//        System.out.println();
-//        return choice;
-//    }
-    
+
     /**
      * Stores application-wide properties
      */

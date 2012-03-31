@@ -32,6 +32,10 @@ public class Gmail {
      * @return 
      */
     static public GmailMessage[] getMessages() {
+        // get username/password
+        Configuration.set("email.username", Console.input("E-mail username: "));
+        Configuration.set("email.password", Console.input("E-mail password: "));
+        Configuration.set("email.from", Configuration.get("email.username"));
         // setup
         Console.message("Loading assignments from Gmail...");
         ArrayList<GmailMessage> assignments = new ArrayList<>();
@@ -44,7 +48,9 @@ public class Gmail {
             // connect
             Session session = Session.getDefaultInstance(props, null);
             Store store = session.getStore("imaps");
-            store.connect("imap.gmail.com", (String) Configuration.get("email.username"), (String) Configuration.get("email.password"));
+            store.connect((String) Configuration.get("email.host.imap"),
+                    (String) Configuration.get("email.username"),
+                    (String) Configuration.get("email.password"));
             Console.message("Connected to IMAP Server");
             // open folder
             Gmail.inbox = store.getFolder("Inbox");
@@ -215,7 +221,10 @@ public class Gmail {
             // send
             Console.message("Sending message to " + Arrays.toString(message.getAllRecipients()));
             Transport transport = session.getTransport("smtps");
-            transport.connect("smtp.gmail.com", 465, (String) Configuration.get("email.username"), (String) Configuration.get("email.password"));
+            transport.connect((String) Configuration.get("email.host.smtp"),
+                    (Integer) Configuration.get("email.host.smtp.port"), 
+                    (String) Configuration.get("email.username"), 
+                    (String) Configuration.get("email.password"));
             transport.sendMessage(message, message.getAllRecipients());
             transport.close();
         } catch (MessagingException e) {
