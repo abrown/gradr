@@ -1,7 +1,7 @@
 package grading;
 
 import app.Configuration;
-import app.Console;
+import lib.Console;
 import java.io.File;
 import java.io.FileInputStream;
 import java.io.FileOutputStream;
